@@ -1,0 +1,31 @@
+---
+# Example playbook showing how to use the user_management role
+
+- name: Bootstrap users on all servers
+  hosts: all
+  become: true
+  
+  roles:
+    - role: user_management
+      vars:
+        user_management_users:
+          - name: alice
+            groups: ["sudo"]
+            ssh_key: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIalice alice@example.com"
+          
+          - name: bob
+            groups: ["users"]
+            ssh_key: "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQbob bob@example.com"
+          
+          - name: charlie
+            groups: ["sudo", "developers"]
+            ssh_key: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIcharlie charlie@example.com"
+            shell: /bin/zsh
+        
+        user_management_users_remove:
+          - jdoe
+          - olduser
+        
+        user_management_additional_groups:
+          - developers
+          - operators

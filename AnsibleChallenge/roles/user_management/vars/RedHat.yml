@@ -1,0 +1,8 @@
+---
+# vars file for user_management - RedHat-based systems
+
+user_management_sudo_group: wheel
+
+user_management_default_groups:
+  - wheel
+  - users

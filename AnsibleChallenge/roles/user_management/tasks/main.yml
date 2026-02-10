@@ -1,0 +1,96 @@
+---
+# tasks file for user_management
+
+- name: Load OS-specific variables
+  ansible.builtin.include_vars: "{{ item }}"
+  with_first_found:
+    - "{{ ansible_distribution }}.yml"
+    - "{{ ansible_os_family }}.yml"
+  tags:
+    - user_management
+    - user_management_vars
+
+- name: Display OS-specific sudo group
+  ansible.builtin.debug:
+    msg: "Using sudo group: {{ user_management_sudo_group }}"
+    verbosity: 1
+  tags:
+    - user_management
+
+- name: Ensure default groups exist
+  ansible.builtin.group:
+    name: "{{ item }}"
+    state: present
+  loop: "{{ user_management_default_groups }}"
+  tags:
+    - user_management
+    - user_management_groups
+
+- name: Ensure additional custom groups exist
+  ansible.builtin.group:
+    name: "{{ item }}"
+    state: present
+  loop: "{{ user_management_additional_groups }}"
+  when: user_management_additional_groups | length > 0
+  tags:
+    - user_management
+    - user_management_groups
+
+- name: Create and configure users
+  ansible.builtin.user:
+    name: "{{ item.name }}"
+    groups: "{{ _normalized_groups }}"
+    append: yes
+    shell: "{{ item.shell | default(user_management_default_shell) }}"
+    create_home: "{{ item.create_home | default(user_management_create_home) }}"
+    state: "{{ item.state | default('present') }}"
+  loop: "{{ user_management_users }}"
+  vars:
+    # Normalize group names - replace 'sudo/wheel' with OS-specific sudo group
+    _normalized_groups: >-
+      {{
+        (item.groups | default([])) | map('regex_replace', '^(sudo|wheel)$', user_management_sudo_group) | list
+      }}
+  when: item.state | default('present') == 'present'
+  tags:
+    - user_management
+    - user_management_create
+
+- name: Configure SSH authorized keys
+  ansible.builtin.authorized_key:
+    user: "{{ item.name }}"
+    key: "{{ item.ssh_key }}"
+    state: present
+    exclusive: no
+  loop: "{{ user_management_users }}"
+  when:
+    - item.state | default('present') == 'present'
+    - item.ssh_key is defined
+    - item.ssh_key | length > 0
+  tags:
+    - user_management
+    - user_management_ssh
+
+- name: Remove specified users
+  ansible.builtin.user:
+    name: "{{ item if item is string else item.name }}"
+    state: absent
+    remove: "{{ (item.remove_home | default(user_management_remove_home)) if item is mapping else user_management_remove_home }}"
+    force: "{{ item.force | default(false) if item is mapping else false }}"
+  loop: "{{ user_management_users_remove }}"
+  when: user_management_users_remove | length > 0
+  tags:
+    - user_management
+    - user_management_remove
+
+- name: Remove users marked with state=absent
+  ansible.builtin.user:
+    name: "{{ item.name }}"
+    state: absent
+    remove: "{{ item.remove_home | default(user_management_remove_home) }}"
+    force: "{{ item.force | default(false) }}"
+  loop: "{{ user_management_users }}"
+  when: item.state | default('present') == 'absent'
+  tags:
+    - user_management
+    - user_management_remove

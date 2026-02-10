@@ -1,0 +1,8 @@
+---
+# vars file for user_management - Debian-based systems
+
+user_management_sudo_group: sudo
+
+user_management_default_groups:
+  - sudo
+  - users

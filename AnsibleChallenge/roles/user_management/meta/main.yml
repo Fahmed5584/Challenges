@@ -1,0 +1,37 @@
+---
+# meta file for user_management
+
+galaxy_info:
+  role_name: user_management
+  author: DevOps Team
+  description: Production-ready role for managing Linux users across multiple distributions
+  company: BtlNet
+  license: MIT
+  min_ansible_version: "2.10"
+  
+  platforms:
+    - name: Ubuntu
+      versions:
+        - focal
+        - jammy
+    - name: Debian
+      versions:
+        - bullseye
+        - bookworm
+    - name: EL
+      versions:
+        - "8"
+        - "9"
+    - name: Fedora
+      versions:
+        - "37"
+        - "38"
+  
+  galaxy_tags:
+    - system
+    - users
+    - security
+    - ssh
+    - administration
+
+dependencies: []
